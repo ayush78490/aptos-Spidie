@@ -737,7 +737,7 @@ SpiderMan.prototype.keydown = function(keyCode) {
 SpiderMan.prototype.keyup = function(keyCode) {
 	this.runningFrame = 0;
 
-	if (keyCode == KEY.ARROW_RIGHT || keyCode == KEY.ARROW_LEFT) {
+	if (keyCode == KEY.S || keyCode == KEY.A) {
 		this.removeState("RUNNING");
 	}
 
@@ -1045,64 +1045,69 @@ Enemy.prototype.shoot = function() {
 }
 
 Enemy.prototype.drawHealthbar = function() {
-    const img = this.stateImg;
-    const scale = this.scale;
-    const barWidth = 50;   // width of the health bar
-    const barHeight = 6;   // height of the health bar
-    const border = 2;      // border thickness
+	var healthbar = {
+		height: 5,
+		width: 100,
+		style: "red",
+		borderWidth: 2,
+		borderStyle: "black"
+	};
 
-    // Calculate the center x above the enemy sprite
-    const x = this.x - this.game.cameraX + (img.width * scale / 2) - (barWidth / 2);
-    const y = this.y - 12; // 12px above the enemy sprite
+	var x = this.x - this.game.cameraX;
+	x -= healthbar.width / 2; // to center the healthbar with the X of the character
+	x += this.stateImg.width * this.scale / 2; // to center the healthbar with the X of characters center
 
-    // Draw border
-    this.ctx.fillStyle = "black";
-    this.ctx.fillRect(x - border, y - border, barWidth + border * 2, barHeight + border * 2);
+	var y      = this.y - (healthbar.height + healthbar.borderWidth * 2) - 5;
+	var width  = healthbar.width * this.health / this.maxHealth; // get the width for current health
+	var height = healthbar.height;
 
-    // Draw background
-    this.ctx.fillStyle = "#800";
-    this.ctx.fillRect(x, y, barWidth, barHeight);
+	var borderX      = x - healthbar.borderWidth;
+	var borderY      = y - healthbar.borderWidth;
+	var borderWidth  = healthbar.width + healthbar.borderWidth * 2;
+	var borderHeight = healthbar.height + healthbar.borderWidth * 2;
 
-    // Draw health
-    this.ctx.fillStyle = "#e62429";
-    const healthWidth = barWidth * (this.health / this.maxHealth);
-    this.ctx.fillRect(x, y, healthWidth, barHeight);
+	this.ctx.fillStyle = healthbar.borderStyle;
+	this.ctx.fillRect(borderX, borderY, borderWidth, borderHeight);
+
+	this.ctx.fillStyle = healthbar.style;
+	this.ctx.fillRect(x, y, width, height);
 }
 
 Enemy.prototype.update = function() {
-	var img = this.game.resources[this.name];
-	this.stateImg = img;
+    var img = this.game.resources[this.name];
+    this.stateImg = img;
 
-	if (this.health <= 0) {
-		this.remove();
-	}
+    this.drawHealthbar();
 
-	this.drawHealthbar();
+    if (this.health <= 0) {
+        this.remove();
+        return; // Stop further drawing for this frame
+    }
 
-	var x = this.x - this.game.cameraX;
-	var y = this.y;
-	var width = img.width * this.scale;
-	var height = img.height * this.scale;
+    var x = this.x - this.game.cameraX;
+    var y = this.y;
+    var width = img.width * this.scale;
+    var height = img.height * this.scale;
 
-	this.ctx.save();
-	this.ctx.scale(-1, 1);
+    this.ctx.save();
+    this.ctx.scale(-1, 1);
 
-	this.ctx.drawImage(this.game.resources[this.name], (x + width) * -1, y, width, height);
-	this.ctx.restore();
+    this.ctx.drawImage(this.game.resources[this.name], (x + width) * -1, y, width, height);
+    this.ctx.restore();
 
-	if (this.wasDamagedOnPreviousFrame) {
-		this.wasDamagedOnPreviousFrame = false;
-		this.ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-		this.ctx.fillRect(x, y, width, height);
-	}
+    if (this.wasDamagedOnPreviousFrame) {
+        this.wasDamagedOnPreviousFrame = false;
+        this.ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+        this.ctx.fillRect(x, y, width, height);
+    }
 
-	var isInScreen = this.x - this.game.cameraX <= this.canvas.width;
+    var isInScreen = this.x - this.game.cameraX <= this.canvas.width;
 
-	if (this.frame % 100 === 0 && isInScreen) {
-		this.shoot();
-	}
+    if (this.frame % 100 === 0 && isInScreen) {
+        this.shoot();
+    }
 
-	this.frame++;
+    this.frame++;
 }
 
 	Enemy.prototype.remove = async function() {
