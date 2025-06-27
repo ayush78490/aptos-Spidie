@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description"
+                content="A Simple Spiderman Game in HTML5, CSS3 and Javascript" />
+    <meta name="author" content="Ayush Raj" />
+    <title>Spider-Man Game | A spiderman game to fight with more Villains of Spider-Man</title>
+    <link rel="shortcut icon" href="images/spider-head.png" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.5/web3.min.js"></script>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+        .canvas-wrapper {
+            position: fixed;
+            top: 10vh;
+            left: 10vw;
+            width: 80vw;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        #canvas {
+            display: block;
+            width: 80vw;
+            height: 80vh;
+            background: #000;
+        }
+        .keyboard {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        .key {
+            height: 30px;
+            min-width: 20px;
+            line-height: 30px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-bottom: 3px solid #bbb;
+            background: white;
+            display: inline-block;
+            padding: 0 5px;
+            border-radius: 5px;
+            box-shadow: inset 0 -1px 0 #ccc;
+            color: #333;
+            font-weight: bold;
+        }
+        .key.spacebar {
+            padding: 0 40px;
+        }
+        .action {
+            margin-right: 15px;
+        }
+        .link {
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            color: #ccc;
+            font-family: SpidermanGamePixelFont, Helvetica, Arial;
+            margin-top: 20px;
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+        }
+        #fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 70px;
+            z-index: 3;
+            padding: 8px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #222;
+            color: #fff;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        #fullscreen-btn:hover {
+            opacity: 1;
+        }
+        /* Landing Page Styles */
+        .spiderman-landing {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #111;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .spiderman-landing h1 {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+        }
+        .spiderman-landing h2 {
+            font-size: 2em;
+            margin-bottom: 1em;
+        }
+        .character-cards {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .character-card {
+            margin: 10px;
+            text-align: center;
+        }
+        .character-card img {
+            max-width: 100px;
+            height: auto;
+            margin-bottom: 0.5em;
+        }
+        #play-btn {
+            padding: 20px 60px;
+            font-size: 2em;
+            border: none;
+            border-radius: 10px;
+            background: #e62429;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 20px #000;
+            transition: background 0.3s;
+        }
+        #play-btn:hover {
+            background: #c92024;
+        }
+        .wallet-topright {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 11;
+            display: flex;
+            align-items: center;
+        }
+        .wallet-topright button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page Overlay -->
+    <div id="landing-page" class="spiderman-landing">
+        <div class="wallet-topright">
+            <button id="connect-wallet-btn">Connect Wallet</button>
+            <div id="wallet-info" style="display:none;">
+                <div><strong>Address:</strong> <span id="wallet-address"></span></div>
+                <div><strong>tCORE Balance:</strong> <span id="wallet-balance"></span></div>
+            </div>
+        </div>
+        <h1>Spider-Man Game</h1>
+        <div>
+            <div class="character-intro">
+                <h2>Meet the Characters</h2>
+                <div class="character-cards">
+                    <div class="character-card">
+                        <img src="images/standing.png" alt="Spider-Man">
+                        <div class="character-name">Spider-Man</div>
+                    </div>
+                    <div class="character-card">
+                        <img src="images/goblin.png" alt="Green Goblin">
+                        <div class="character-name">Green Goblin</div>
+                    </div>
+                    <div class="character-card">
+                        <img src="images/venom.png" alt="Venom">
+                        <div class="character-name">Venom</div>
+                    </div>
+                    <div class="character-card">
+                        <img src="images/doctor-octopus.png" alt="Doctor Octopus">
+                        <div class="character-name">Doctor Octopus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="play-btn">Play</button>
+    </div>
+
+    <div class="canvas-wrapper" style="filter: blur(0px);">
+        <button id="fullscreen-btn">Fullscreen</button>
+        <div class="keyboard">
+            <div class="key spacebar">Spacebar</div>
+            <span class="action">- Shoot</span>
+            <div class="key">←</div>
+            <div class="key">→</div>
+            <span class="action">- Left/Right</span>
+            <div class="key">↑</div>
+            <span class="action">- Jump</span>
+            <div class="key">Esc</div>
+            <span class="action">- Pause</span>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="link">
+            View Source on 
+            <a href="https://github.com/RedEdge967/mini-spidey" target="_blank">Github</a>
+        </div>
+    </div>
+    <script type="text/javascript" src="spiderman-game.js"></script>
+    <script type="text/javascript" src="connect-core-testnet.js"></script>
+    <script type="text/javascript">
+        // Hide game UI until Play is clicked
+        document.querySelector('.canvas-wrapper').style.display = 'none';
+
+		var game;
+
+        document.getElementById('play-btn').onclick = function() {
+            // Check if wallet is connected
+            if (!window.connectedWallet) {
+                alert('Please connect your wallet before playing!');
+                return;
+            }
+            document.getElementById('landing-page').style.display = 'none';
+            document.querySelector('.canvas-wrapper').style.display = 'flex';
+            // Now load the game
+            var game = new SpidermanGame({
+                canvas: "#canvas"
+            });
+            window.game = game;
+            window.game.connectedWallet = window.connectedWallet; // assign wallet to game
+            game.load();
+
+            // Make canvas resize to fit window
+            function resizeCanvas() {
+                const canvas = document.getElementById('canvas');
+                canvas.width = window.innerWidth * 0.8;
+                canvas.height = window.innerHeight * 0.8;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Fullscreen button
+            document.getElementById('fullscreen-btn').onclick = function() {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.mozRequestFullScreen) { /* Firefox */
+                    elem.mozRequestFullScreen();
+                } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE/Edge */
+                    elem.msRequestFullscreen();
+                }
+            };
+        };
+
+        async function connectWalletAndShowInfo() {
+			if (!window.ethereum) {
+				alert('Please install MetaMask or another compatible wallet.');
+				return;
+			}
+			try {
+				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+				const address = accounts[0];
+
+				// Store connected wallet in game instance
+				if (window.game) {
+					window.game.connectedWallet = address;
+				} else {
+                    // Store globally until game is created
+                    window.connectedWallet = address;
+                }
+
+				// Switch to Core Testnet
+				const coreTestnetConfig = {
+					chainId: '0x45a',
+					chainName: 'Core Blockchain Testnet',
+					rpcUrls: ['https://rpc.test2.btcs.network'],
+					nativeCurrency: { name: 'tCORE2', symbol: 'tCORE2', decimals: 18 },
+					blockExplorerUrls: ['https://scan.test2.btcs.network']
+				};
+				try {
+					await window.ethereum.request({
+						method: 'wallet_switchEthereumChain',
+						params: [{ chainId: coreTestnetConfig.chainId }]
+					});
+				} catch (switchError) {
+					if (switchError.code === 4902) {
+						await window.ethereum.request({
+							method: 'wallet_addEthereumChain',
+							params: [coreTestnetConfig]
+						});
+					} else {
+						throw switchError;
+					}
+				}
+
+				document.getElementById('connect-wallet-btn').style.display = 'none';
+				document.getElementById('wallet-info').style.display = 'block';
+				document.getElementById('wallet-address').textContent =
+					address.slice(0, 6) + '...' + address.slice(-4);
+
+				const balanceHex = await window.ethereum.request({
+					method: 'eth_getBalance',
+					params: [address, 'latest']
+				});
+				const balance = parseInt(balanceHex, 16) / 1e18;
+				document.getElementById('wallet-balance').textContent = balance + ' tCORE2';
+			} catch (err) {
+				alert('Wallet connection failed: ' + (err.message || err));
+			}
+		}
+
+        // Attach to button
+        document.getElementById('connect-wallet-btn').onclick = connectWalletAndShowInfo;
+
+        // Optional: update balance/address if account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', () => {
+                document.getElementById('wallet-info').style.display = 'none';
+                document.getElementById('connect-wallet-btn').style.display = 'inline-block';
+            });
+            window.ethereum.on('chainChanged', () => {
+                document.getElementById('wallet-info').style.display = 'none';
+                document.getElementById('connect-wallet-btn').style.display = 'inline-block';
+            });
+        }
+
+        // Toast helper
+        function showToast(message, duration = 4000, color = '#fff') {
+            let oldToast = document.getElementById('spiderman-toast');
+            if (oldToast) oldToast.remove();
+
+            let toast = document.createElement('div');
+            toast.id = 'spiderman-toast';
+            toast.innerHTML = message;
+            toast.style.position = 'fixed';
+            toast.style.left = '50%';
+            toast.style.top = '20%';
+            toast.style.transform = 'translate(-50%, 0)';
+            toast.style.background = 'rgba(34,34,34,0.95)';
+            toast.style.color = color;
+            toast.style.padding = '18px 36px';
+            toast.style.borderRadius = '12px';
+            toast.style.fontFamily = 'SpidermanGamePixelFont, Helvetica, Arial, sans-serif';
+            toast.style.fontSize = '1.3em';
+            toast.style.zIndex = 9999;
+            toast.style.boxShadow = '0 4px 24px #000a';
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, duration);
+        }
+        window.showToast = showToast;
+    </script>
+</body>
+</html>

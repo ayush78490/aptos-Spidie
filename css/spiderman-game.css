@@ -1,0 +1,179 @@
+@font-face {
+	font-family: SpidermanGamePixelFont;
+	src: url(../fonts/pixel.otf);
+}
+
+.spiderman-game-menu-container,
+.spiderman-game-menu-container * {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+
+	-webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+
+.spiderman-game-menu-container {
+	position: absolute;
+	display: none;
+	height: auto;
+
+	-webkit-transform: translate(-50%, -50%);
+	-moz-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+	-o-transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%);
+}
+
+.spiderman-game-menu-title {
+	text-align: center;
+	font-size: 20px;
+	line-height: 60px;
+	font-family: SpidermanGamePixelFont;
+	color: white;
+	display: block;
+	padding: 5px;
+}
+
+.spiderman-game-menu-button {
+    line-height: 30px;
+    font-size: 15px;
+    text-align: center;
+    font-family: SpidermanGamePixelFont;
+    color: white;
+}
+
+.spiderman-game-menu-button:hover {
+    color: red;
+}
+
+.spiderman-game-menu-button:active {
+	color: rgb(200, 0, 0);
+}
+
+.character-intro {
+    max-width: 800px;
+    text-align: center;
+    margin-bottom: 2em;
+}
+.character-cards {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+}
+.character-card {
+    background: #222;
+    border-radius: 15px;
+    box-shadow: 0 4px 16px #000a;
+    padding: 20px 15px 10px 15px;
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s;
+}
+.character-card:hover {
+    transform: translateY(-8px) scale(1.05);
+}
+.character-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    background: #fff2;
+}
+.character-name {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #e62429;
+    margin-top: 5px;
+    letter-spacing: 1px;
+}
+
+/* Apply the pixel font to the landing page and headings */
+.spiderman-landing,
+.spiderman-landing h1,
+.spiderman-landing h2,
+.spiderman-landing .character-name,
+.spiderman-landing button {
+    font-family: SpidermanGamePixelFont, Helvetica, Arial, sans-serif;
+    letter-spacing: 1px;
+}
+
+/* Make sure the landing page overlay is styled */
+.spiderman-landing {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #111;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+/* Style the Play button */
+#play-btn {
+    padding: 20px 60px;
+    font-size: 2em;
+    border: none;
+    border-radius: 10px;
+    background: #e62429;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 20px #000;
+    margin-top: 30px;
+    font-family: SpidermanGamePixelFont, Helvetica, Arial, sans-serif;
+    transition: background 0.2s;
+}
+#play-btn:hover {
+    background: #b71c1c;
+}
+
+.wallet-topright {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+#wallet-info {
+    background: #222;
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 1em;
+    box-shadow: 0 2px 8px #000a;
+    min-width: 220px;
+    text-align: left;
+}
+#connect-wallet-btn {
+    padding: 10px 24px;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px;
+    background: #e62429;
+    color: #fff;
+    cursor: pointer;
+    font-family: SpidermanGamePixelFont, Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    box-shadow: 0 2px 8px #000a;
+    transition: background 0.2s;
+}
+#connect-wallet-btn:hover {
+    background: #b71c1c;
+}
