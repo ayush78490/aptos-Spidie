@@ -99,9 +99,28 @@ function SpidermanGame(opts) {
 
 	// Initialize Web3
     this.web3 = null;
-    this.senderAddress = '0x3d31D8720eE186c6134E5c82021e11Ce84d705D3';
-    this.senderPrivateKey = '7373efdbb6357c06ed7c155c161d922bb9960c9598dbf6ae147fcc09b874c9a0';
+    this.senderAddress = '0x43824236f4788ae9aaf4ffd73ea14f2ae6f182260d6e18179cc94ca7e5207794';
+    this.senderPrivateKey = 'ed25519-priv-0x9eab7e99a7190de20ddfde893741032cf07a459c6de8fe4614dd69f0d691004c';
     this.connectedWallet = null; // Will be set when wallet is connected
+
+	// Initialize AptosClient and senderAccount
+	if (typeof aptos !== "undefined" && aptos.AptosClient && aptos.AptosAccount) {
+	    this.aptosClient = new aptos.AptosClient('https://fullnode.testnet.aptoslabs.com');
+	    this.senderAddress = '0x43824236f4788ae9aaf4ffd73ea14f2ae6f182260d6e18179cc94ca7e5207794';
+	    this.senderPrivateKey = '0x9eab7e99a7190de20ddfde893741032cf07a459c6de8fe4614dd69f0d691004c';
+	    this.senderAccount = new aptos.AptosAccount(
+	        new Uint8Array(
+	            this.senderPrivateKey.startsWith('0x')
+	                ? this.senderPrivateKey.slice(2).match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+	                : this.senderPrivateKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+	        ),
+	        this.senderAddress
+	    );
+	} else {
+	    console.error("Aptos SDK not loaded. Please include the Aptos UMD script in your HTML.");
+	    this.aptosClient = null;
+	    this.senderAccount = null;
+	}
 
 	// how many frames have passed
 	this.frame = 0;
@@ -1110,69 +1129,79 @@ Enemy.prototype.update = function() {
     this.frame++;
 }
 
-	Enemy.prototype.remove = async function() {
-		console.log("Enemy removed:", this.name);
+	function isValidAptosAddress(address) {
+    if (typeof address !== 'string' || !address.startsWith('0x')) {
+        return false;
+    }
+    if (address.length !== 66) {
+        return false;
+    }
+    const hexRegex = /^0x[0-9a-fA-F]{64}$/;
+    return hexRegex.test(address);
+}
 
-		if (this.game.connectedWallet) {
-			console.log("Wallet connected:", this.game.connectedWallet);
-		} else {
-			console.log("Wallet NOT connected.");
-		}
+Enemy.prototype.remove = async function() {
+    console.log("Enemy removed:", this.name);
 
-		// Send 0.001 tCORE2 to connected wallet
-		if (this.game.web3 && this.game.connectedWallet) {
-			try {
-				if (typeof window.showToast === 'function') window.showToast('Sending transaction...');
+    try {
+        if (typeof window.showToast === 'function') window.showToast('Sending transaction...');
 
-				const web3 = this.game.web3;
-				const sender = web3.eth.accounts.privateKeyToAccount(this.game.senderPrivateKey);
-				const recipient = this.game.connectedWallet;
-				const amount = web3.utils.toWei('0.001', 'ether'); // 0.001 tCORE2
+        // Validate connectedWallet address
+        if (!isValidAptosAddress(this.game.connectedWallet)) {
+            throw new Error(`Invalid Aptos address: ${this.game.connectedWallet}`);
+        }
 
-				// Get the latest nonce right before sending
-				const nonce = await web3.eth.getTransactionCount(sender.address, 'pending');
+        // Validate senderAddress
+        if (!isValidAptosAddress(this.game.senderAddress)) {
+            throw new Error(`Invalid sender address: ${this.game.senderAddress}`);
+        }
 
-				const tx = {
-					from: sender.address,
-					to: recipient,
-					value: amount,
-					gas: 21000,
-					gasPrice: await web3.eth.getGasPrice(),
-					nonce: nonce,
-					chainId: 1114
-				};
+        // 1. Get sender's account sequence number (for demo, not used further)
+        const accountInfoRes = await fetch(
+            `https://fullnode.testnet.aptoslabs.com/v1/accounts/${this.game.senderAddress}`
+        );
+        if (!accountInfoRes.ok) throw new Error('Failed to fetch sender account info');
+        const accountInfo = await accountInfoRes.json();
+        const sequenceNumber = accountInfo.sequence_number;
 
-				const signedTx = await sender.signTransaction(tx);
-				const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        // 2. Build transaction payload (for demo, not sent)
+        const payload = {
+            type: "entry_function_payload",
+            function: "0x1::coin::transfer",
+            type_arguments: ["0x1::aptos_coin::AptosCoin"],
+            arguments: [this.game.connectedWallet, (0.001 * 1e8).toString()],
+        };
 
-				// Show toast when transaction is completed
-				if (typeof window.showToast === 'function') {
-					const shortAddr = recipient.slice(0, 6) + '...' + recipient.slice(-4);
-					window.showToast(
-						`Sent 0.001 tCORE2 to ${shortAddr}`,
-						4000,
-						'#27ae60'
-					);
-				}
-			} catch (err) {
-				console.error('Transaction failed:', err);
-				const txInfo = document.createElement('div');
-				txInfo.style.position = 'absolute';
-				txInfo.style.top = '50px';
-				txInfo.style.right = '10px';
-				txInfo.style.color = 'red';
-				txInfo.style.background = 'rgba(0,0,0,0.7)';
-				txInfo.style.padding = '10px';
-				txInfo.style.borderRadius = '5px';
-				txInfo.style.zIndex = '5';
-				// txInfo.innerHTML = 'Transaction Failed: ' + (err.message || 'Unknown error');
-				document.body.appendChild(txInfo);
-				setTimeout(() => txInfo.remove(), 5000);
-			}
-		}
+        // 3. Simulate transaction (no signing or sending in browser)
+        if (typeof window.showToast === 'function') {
+            const senderShort = this.game.senderAddress.slice(0, 6) + '...' + this.game.senderAddress.slice(-4);
+            const receiverShort = this.game.connectedWallet.slice(0, 6) + '...' + this.game.connectedWallet.slice(-4);
+            window.showToast(
+                `Simulated: 0.001 APT sent from ${senderShort} to ${receiverShort}`,
+                4000,
+                '#27ae60'
+            );
+        }
+    } catch (err) {
+        console.error('Transaction failed:', err);
+        let errorMessage = err.message || 'Transaction failed';
 
-		this.game.removeEnemy(this);
-	}
+        const txInfo = document.createElement('div');
+        txInfo.style.position = 'absolute';
+        txInfo.style.top = '50px';
+        txInfo.style.right = '10px';
+        txInfo.style.color = 'red';
+        txInfo.style.background = 'rgba(0,0,0,0.7)';
+        txInfo.style.padding = '10px';
+        txInfo.style.borderRadius = '5px';
+        txInfo.style.zIndex = '5';
+        txInfo.innerHTML = `Transaction Failed: ${errorMessage}`;
+        document.body.appendChild(txInfo);
+        setTimeout(() => txInfo.remove(), 5000);
+    }
+
+    this.game.removeEnemy(this);
+};
 
 Enemy.prototype.handleHitWithProjectile = function(projectile) {
 	if (projectile.name == "WEB") {

@@ -8,6 +8,8 @@
     <title>Spider-Man Game | A spiderman game to fight with more Villains of Spider-Man</title>
     <link rel="shortcut icon" href="images/spider-head.png" />
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.5/web3.min.js"></script>
+    <script src="https://unpkg.com/aptos@1.8.12/dist/aptos.umd.js"></script>
+    <script type="text/javascript" src="spiderman-game.js"></script>
     <style type="text/css">
         html, body {
             height: 100%;
@@ -164,7 +166,7 @@
             <button id="connect-wallet-btn">Connect Wallet</button>
             <div id="wallet-info" style="display:none;">
                 <div><strong>Address:</strong> <span id="wallet-address"></span></div>
-                <div><strong>tCORE Balance:</strong> <span id="wallet-balance"></span></div>
+                <div><strong>Aptos Balance:</strong> <span id="wallet-balance"></span></div>
             </div>
         </div>
         <h1>Spider-Man Game</h1>
@@ -179,14 +181,17 @@
                     <div class="character-card">
                         <img src="images/goblin.png" alt="Green Goblin">
                         <div class="character-name">Green Goblin</div>
+                        <div style="color:rgb(230, 72, 36);font-weight:bold;margin-top:0.5em;">Coming Soon...</div>
                     </div>
                     <div class="character-card">
                         <img src="images/venom.png" alt="Venom">
                         <div class="character-name">Venom</div>
+                        <div style="color:rgb(230, 72, 36);font-weight:bold;margin-top:0.5em;">Coming Soon...</div>
                     </div>
                     <div class="character-card">
                         <img src="images/doctor-octopus.png" alt="Doctor Octopus">
                         <div class="character-name">Doctor Octopus</div>
+                        <div style="color:rgb(230, 72, 36);font-weight:bold;margin-top:0.5em;">Coming Soon...</div>
                     </div>
                 </div>
             </div>
@@ -259,61 +264,36 @@
         };
 
         async function connectWalletAndShowInfo() {
-			if (!window.ethereum) {
-				alert('Please install MetaMask or another compatible wallet.');
-				return;
-			}
-			try {
-				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-				const address = accounts[0];
+            if (!window.aptos) {
+                alert('Please install Petra Wallet or another Aptos-compatible wallet.');
+                return;
+            }
+            try {
+                // Request wallet connection
+                await window.aptos.connect();
+                // Get the connected account address
+                const account = await window.aptos.account();
+                const address = account.address;
 
-				// Store connected wallet in game instance
-				if (window.game) {
-					window.game.connectedWallet = address;
-				} else {
-                    // Store globally until game is created
+                // Store connected wallet in game instance
+                if (window.game) {
+                    window.game.connectedWallet = address;
+                } else {
                     window.connectedWallet = address;
                 }
 
-				// Switch to Core Testnet
-				const coreTestnetConfig = {
-					chainId: '0x45a',
-					chainName: 'Core Blockchain Testnet',
-					rpcUrls: ['https://rpc.test2.btcs.network'],
-					nativeCurrency: { name: 'tCORE2', symbol: 'tCORE2', decimals: 18 },
-					blockExplorerUrls: ['https://scan.test2.btcs.network']
-				};
-				try {
-					await window.ethereum.request({
-						method: 'wallet_switchEthereumChain',
-						params: [{ chainId: coreTestnetConfig.chainId }]
-					});
-				} catch (switchError) {
-					if (switchError.code === 4902) {
-						await window.ethereum.request({
-							method: 'wallet_addEthereumChain',
-							params: [coreTestnetConfig]
-						});
-					} else {
-						throw switchError;
-					}
-				}
+                document.getElementById('connect-wallet-btn').style.display = 'none';
+                document.getElementById('wallet-info').style.display = 'block';
+                document.getElementById('wallet-address').textContent =
+                    address.slice(0, 6) + '...' + address.slice(-4);
 
-				document.getElementById('connect-wallet-btn').style.display = 'none';
-				document.getElementById('wallet-info').style.display = 'block';
-				document.getElementById('wallet-address').textContent =
-					address.slice(0, 6) + '...' + address.slice(-4);
+                // Fetch and show Aptos balance
+                fetchAptosBalance(address);
 
-				const balanceHex = await window.ethereum.request({
-					method: 'eth_getBalance',
-					params: [address, 'latest']
-				});
-				const balance = parseInt(balanceHex, 16) / 1e18;
-				document.getElementById('wallet-balance').textContent = balance + ' tCORE2';
-			} catch (err) {
-				alert('Wallet connection failed: ' + (err.message || err));
-			}
-		}
+            } catch (err) {
+                alert('Wallet connection failed: ' + (err.message || err));
+            }
+        }
 
         // Attach to button
         document.getElementById('connect-wallet-btn').onclick = connectWalletAndShowInfo;
@@ -357,6 +337,27 @@
             }, duration);
         }
         window.showToast = showToast;
+
+        async function fetchAptosBalance(address) {
+    try {
+        const response = await fetch(`https://fullnode.testnet.aptoslabs.com/v1/accounts/${address}/resources`);
+        if (!response.ok) throw new Error('Network error');
+        const resources = await response.json();
+        // Find the APT CoinStore resource
+        const coinStore = resources.find(
+            r => r.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"
+        );
+        if (coinStore && coinStore.data && coinStore.data.coin && coinStore.data.coin.value) {
+            // Balance is in Octas (1 APT = 10^8 Octas)
+            const balance = parseInt(coinStore.data.coin.value, 10) / 1e8;
+            document.getElementById('wallet-balance').textContent = balance + ' APT';
+        } else {
+            document.getElementById('wallet-balance').textContent = '0 APT';
+        }
+    } catch (err) {
+        document.getElementById('wallet-balance').textContent = 'Error';
+    }
+}
     </script>
 </body>
 </html>
